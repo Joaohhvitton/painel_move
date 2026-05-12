@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Atualização MOVE 07.02.50</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red:#C0392B; --red-l:#E74C3C; --red-dim:rgba(192,57,43,.12);
+    --bg:#0D0D0D; --surf:#161616; --surf2:#1E1E1E; --surf3:#252525;
+    --brd:rgba(255,255,255,.07); --brd2:rgba(255,255,255,.14);
+    --txt:#F0F0F0; --muted:#888; --dim:#555;
+    --green:#27AE60; --amber:#E67E22;
+    --fh:'Barlow Condensed',sans-serif; --fb:'Barlow',sans-serif;
+  }
+  body { background:var(--bg); color:var(--txt); font-family:var(--fb); font-size:14px; min-height:100vh; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background:var(--surf); border-bottom:1px solid var(--brd);
+    padding:0 32px; height:56px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:100;
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .dot { width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+  .brand-title { font-family:var(--fh);font-size:18px;font-weight:700;letter-spacing:.5px;color:#fff; }
+  .ver-badge { background:var(--red);color:#fff;font-family:var(--fh);font-size:12px;font-weight:600;padding:3px 10px;border-radius:3px; }
+  .topbar-right { display:flex;align-items:center;gap:16px; }
+  #last-update { font-size:11px;color:var(--dim); }
+  .refresh-btn {
+    display:flex;align-items:center;gap:6px;background:var(--surf2);
+    border:1px solid var(--brd2);border-radius:6px;padding:6px 12px;
+    font-family:var(--fh);font-size:13px;font-weight:600;color:var(--muted);
+    cursor:pointer;transition:all .15s;
+  }
+  .refresh-btn:hover{border-color:var(--red);color:var(--red);}
+  .refresh-btn svg{transition:transform .4s;}
+  .refresh-btn.spinning svg{animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── LAYOUT ── */
+  .main { max-width:1400px;margin:0 auto;padding:28px 32px 60px; }
+
+  /* ── LOADING ── */
+  .loading-screen {
+    position:fixed;inset:0;background:var(--bg);z-index:999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  }
+  .loading-screen.hidden{display:none;}
+  .spinner{width:36px;height:36px;border:3px solid var(--surf3);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
+  .loading-text{font-family:var(--fh);font-size:16px;color:var(--muted);}
+
+  /* ── KPI GRID ── */
+  .kpi-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px; }
+  .kpi-card {
+    background:var(--surf);border:1px solid var(--brd);border-radius:10px;
+    padding:18px 20px;position:relative;overflow:hidden;
+  }
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--brd));}
+  .kpi-card.c-red{--ac:var(--red)}.kpi-card.c-green{--ac:var(--green)}.kpi-card.c-amber{--ac:var(--amber)}.kpi-card.c-gray{--ac:#555}
+  .kpi-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:8px;}
+  .kpi-value{font-family:var(--fh);font-size:38px;font-weight:800;line-height:1;color:#fff;margin-bottom:4px;}
+  .kpi-sub{font-size:12px;color:var(--muted);}
+  .kpi-icon{position:absolute;top:16px;right:16px;font-size:22px;opacity:.13;}
+
+  /* ── SECTION HEADER ── */
+  .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .sh-title{font-family:var(--fh);font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+  .sh-tag{font-size:11px;color:var(--muted);background:var(--surf2);padding:3px 10px;border-radius:20px;border:1px solid var(--brd);}
+
+  /* ── TABLE ── */
+  .table-wrap{background:var(--surf);border:1px solid var(--brd);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:#111;}
+  th{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--dim);padding:12px 16px;text-align:left;border-bottom:1px solid var(--brd);white-space:nowrap;}
+  th:not(:first-child){text-align:right;}
+
+  tr.dir-row{background:var(--surf2);cursor:pointer;user-select:none;}
+  tr.dir-row:hover{background:var(--surf3);}
+  .dir-name{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--red-l);padding:13px 16px;}
+  .dir-name-inner{display:flex;align-items:center;gap:8px;}
+  .chevron{font-size:10px;transition:transform .2s;color:var(--dim);display:inline-block;}
+  .chevron.open{transform:rotate(90deg);}
+  .dir-row td:not(.dir-name){font-family:var(--fh);font-size:14px;font-weight:700;color:var(--txt);padding:13px 16px;text-align:right;}
+
+  tr.ddd-row{border-bottom:1px solid var(--brd);}
+  tr.ddd-row:last-of-type{border-bottom:none;}
+  tr.ddd-row td{padding:11px 16px 11px 36px;font-size:13px;color:#ccc;}
+  tr.ddd-row td:not(:first-child){text-align:right;color:var(--txt);font-weight:500;}
+  tr.ddd-row:hover td{background:var(--surf2);}
+  tr.ddd-row.hidden{display:none;}
+
+  .pct-cell{display:flex;align-items:center;justify-content:flex-end;gap:10px;}
+  .bar-wrap{width:100px;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:3px;background:var(--red);transition:width .6s cubic-bezier(.4,0,.2,1);}
+  .bar-fill.g{background:var(--green);}
+  .pct-val{font-family:var(--fh);font-size:13px;font-weight:600;min-width:52px;text-align:right;}
+
+  tr.total-row td{padding:14px 16px;background:#111;font-family:var(--fh);font-size:14px;font-weight:800;color:#fff;border-top:1px solid var(--brd2);text-align:right;}
+  tr.total-row td:first-child{text-align:left;letter-spacing:1px;}
+
+  /* ── CHARTS ── */
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .chart-card{background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:20px 24px;}
+  .chart-inner{position:relative;width:100%;height:260px;margin-top:16px;}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-family:var(--fh);font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);z-index:9999;pointer-events:none;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.ok{background:var(--green);color:#fff;}
+  .toast.err{background:#c0392b;color:#fff;}
+
+  /* ── ERROR STATE ── */
+  .error-box{background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.3);border-radius:10px;padding:24px;text-align:center;margin-bottom:28px;}
+  .error-box h3{font-family:var(--fh);color:var(--red-l);margin-bottom:8px;}
+  .error-box p{color:var(--muted);font-size:13px;}
+
+  @media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.main{padding:20px 16px 40px}.topbar{padding:0 16px}}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading">
+  <div class="spinner"></div>
+  <span class="loading-text">Carregando dados…</span>
+</div>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="dot"></div>
+    <span class="brand-title">Painel Atualização MOVE</span>
+    <span class="ver-badge">07.02.50</span>
+  </div>
+  <div class="topbar-right">
+    <span id="last-update"></span>
+    <button class="refresh-btn" id="refresh-btn" title="Recarregar dados">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      Atualizar
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card c-gray">
+      <div class="kpi-label">Total MOVE</div>
+      <div class="kpi-value" id="k-total">—</div>
+      <div class="kpi-sub">terminais cadastrados</div>
+      <div class="kpi-icon">📱</div>
+    </div>
+    <div class="kpi-card c-green">
+      <div class="kpi-label">Atualizados</div>
+      <div class="kpi-value" id="k-ok">—</div>
+      <div class="kpi-sub">na versão 07.02.50</div>
+      <div class="kpi-icon">✅</div>
+    </div>
+    <div class="kpi-card c-red">
+      <div class="kpi-label">Pendentes</div>
+      <div class="kpi-value" id="k-pend">—</div>
+      <div class="kpi-sub" id="k-pend-sub">para zerar</div>
+      <div class="kpi-icon">⏳</div>
+    </div>
+    <div class="kpi-card c-amber">
+      <div class="kpi-label">% Atualizado</div>
+      <div class="kpi-value" id="k-pct">—</div>
+      <div class="kpi-sub" id="k-falta">falta —% para 100%</div>
+      <div class="kpi-icon">📊</div>
+    </div>
+  </div>
+
+  <!-- Error placeholder -->
+  <div id="error-box" class="error-box" style="display:none">
+    <h3>⚠ Erro ao carregar dados</h3>
+    <p id="error-msg"></p>
+  </div>
+
+  <!-- Table -->
+  <div class="sh">
+    <span class="sh-title">Por Diretoria e DDD</span>
+    <span class="sh-tag" id="table-tag">carregando…</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Diretoria / DDD</th>
+          <th>MOVE Total</th>
+          <th>Atualizado ✓</th>
+          <th>Pendente ✗</th>
+          <th style="text-align:right">% Atualizado</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="sh" style="margin-bottom:0">
+        <span class="sh-title">Evolução Diária</span>
+        <span class="sh-tag">máquinas/dia</span>
+      </div>
+      <div class="chart-inner"><canvas id="cDaily" role="img" aria-label="Evolução diária de terminais MOVE atualizados"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="sh" style="margin-bottom:0">
+        <span class="sh-title">Acumulado</span>
+        <span class="sh-tag">progresso cumulativo</span>
+      </div>
+      <div class="chart-inner"><canvas id="cCum" role="img" aria-label="Acumulado de terminais atualizados"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DIR_ORDER = ['Dir CO','Dir MG/BA','Dir NORTE','Outros'];
+let cDaily=null, cCum=null, expandState={};
+
+// ── Busca o JSON gerado pelo Actions ──────────────────────
+async function fetchData() {
+  // Em produção (GitHub Pages) lê data.json ao lado do index.html.
+  // Em dev local tenta também sem cache.
+  const url = 'data.json?v=' + Date.now();
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} — data.json não encontrado.`);
+  return res.json();
+}
+
+// ── KPIs ──────────────────────────────────────────────────
+function renderKPIs(meta) {
+  animateNum('k-total', meta.total_geral);
+  animateNum('k-ok',    meta.total_atualizado);
+  animateNum('k-pend',  meta.total_pendente);
+  const pct   = meta.pct_geral ?? 0;
+  const falta = (100 - pct).toFixed(2);
+  document.getElementById('k-pct').textContent   = pct.toFixed(2) + '%';
+  document.getElementById('k-falta').textContent = `falta ${falta}% para 100%`;
+}
+
+function animateNum(id, target) {
+  const el = document.getElementById(id);
+  const start = parseInt(el.textContent.replace(/\D/g,'')) || 0;
+  const t0 = performance.now();
+  const dur = 700;
+  (function step(now) {
+    const p = Math.min((now-t0)/dur, 1);
+    const e = 1-Math.pow(1-p,3);
+    el.textContent = Math.round(start+(target-start)*e).toLocaleString('pt-BR');
+    if(p<1) requestAnimationFrame(step);
+  })(performance.now());
+}
+
+// ── TABLE ──────────────────────────────────────────────────
+function renderTable(rows) {
+  const body = document.getElementById('table-body');
+  body.innerHTML = '';
+
+  const groups = {};
+  for (const r of rows) {
+    const d = r.diretoria || 'Outros';
+    (groups[d] = groups[d]||[]).push(r);
+  }
+
+  let totT=0, totA=0;
+
+  for (const dir of DIR_ORDER) {
+    const ddds = groups[dir];
+    if (!ddds) continue;
+
+    const dT = ddds.reduce((s,r)=>s+r.total,0);
+    const dA = ddds.reduce((s,r)=>s+r.atualizado,0);
+    const dP = dT-dA;
+    const dPct = dT ? dA/dT*100 : 0;
+    totT+=dT; totA+=dA;
+
+    const gid = dir.replace(/\s/g,'_');
+    const open = expandState[gid] !== false;
+
+    const dirTr = document.createElement('tr');
+    dirTr.className='dir-row'; dirTr.dataset.g=gid;
+    dirTr.innerHTML=`
+      <td class="dir-name"><div class="dir-name-inner">
+        <span class="chevron ${open?'open':''}">▶</span>${dir}
+      </div></td>
+      <td>${fmt(dT)}</td>
+      <td>${fmt(dA)}</td>
+      <td>${fmt(dP)}</td>
+      <td>${pctCell(dPct)}</td>`;
+    dirTr.addEventListener('click',()=>toggleGroup(gid));
+    body.appendChild(dirTr);
+
+    for(const ddd of ddds){
+      const pP=ddd.total-ddd.atualizado;
+      const pPct=ddd.total?ddd.atualizado/ddd.total*100:0;
+      const dddTr=document.createElement('tr');
+      dddTr.className=`ddd-row${open?'':' hidden'}`; dddTr.dataset.g=gid;
+      dddTr.innerHTML=`
+        <td>${ddd.ddd||ddd.DDD}</td>
+        <td>${fmt(ddd.total)}</td>
+        <td style="color:${ddd.atualizado>0?'var(--green)':'var(--muted)'}">${fmt(ddd.atualizado)}</td>
+        <td style="color:${pP>0?'var(--red-l)':'var(--green)'}">${fmt(pP)}</td>
+        <td>${pctCell(pPct)}</td>`;
+      body.appendChild(dddTr);
+    }
+  }
+
+  const pTot=totT?totA/totT*100:0;
+  const totTr=document.createElement('tr');
+  totTr.className='total-row';
+  totTr.innerHTML=`
+    <td>TOTAL GERAL</td>
+    <td>${fmt(totT)}</td>
+    <td style="color:var(--green)">${fmt(totA)}</td>
+    <td style="color:var(--red-l)">${fmt(totT-totA)}</td>
+    <td>${pctCell(pTot)}</td>`;
+  body.appendChild(totTr);
+
+  const dirs = Object.keys(groups).length;
+  document.getElementById('table-tag').textContent=`${totT} terminais · ${dirs} Diretorias`;
+}
+
+function pctCell(pct){
+  const col=pct>=100?'var(--green)':pct>50?'var(--amber)':'var(--red-l)';
+  return `<div class="pct-cell">
+    <div class="bar-wrap"><div class="bar-fill${pct>=100?' g':''}" style="width:${Math.min(pct,100).toFixed(1)}%"></div></div>
+    <span class="pct-val" style="color:${col}">${pct.toFixed(2)}%</span>
+  </div>`;
+}
+function fmt(n){ return Number(n).toLocaleString('pt-BR'); }
+
+function toggleGroup(gid){
+  document.querySelectorAll(`tr.ddd-row[data-g="${gid}"]`).forEach(r=>{
+    r.classList.toggle('hidden');
+  });
+  const chev=document.querySelector(`tr.dir-row[data-g="${gid}"] .chevron`);
+  if(chev) chev.classList.toggle('open');
+  const isOpen=chev?.classList.contains('open');
+  expandState[gid]=isOpen;
+}
+
+// ── CHARTS ────────────────────────────────────────────────
+function renderCharts(daily){
+  const labels=daily.map(d=>d.date);
+  const counts=daily.map(d=>d.count);
+  let acc=0;
+  const cumul=counts.map(c=>(acc+=c));
+
+  if(cDaily) cDaily.destroy();
+  if(cCum)   cCum.destroy();
+
+  const gridColor='rgba(255,255,255,.05)';
+  const tickColor='#555';
+
+  cDaily=new Chart(document.getElementById('cDaily'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Atualizados no dia',data:counts,backgroundColor:'#C0392B',borderColor:'#C0392B',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} máquina(s)`}}},
+      scales:{
+        x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{color:gridColor}},
+        y:{ticks:{color:tickColor,font:{size:11},stepSize:1},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+
+  cCum=new Chart(document.getElementById('cCum'),{
+    type:'line',
+    data:{labels,datasets:[{label:'Acumulado',data:cumul,borderColor:'#27AE60',backgroundColor:'rgba(39,174,96,.1)',borderWidth:2,pointBackgroundColor:'#27AE60',pointRadius:5,fill:true,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} acumulado`}}},
+      scales:{
+        x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{color:gridColor}},
+        y:{ticks:{color:tickColor,font:{size:11},stepSize:1},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function toast(msg, type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── MAIN LOAD ─────────────────────────────────────────────
+async function load(showToast=false) {
+  const btn=document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  document.getElementById('error-box').style.display='none';
+
+  try {
+    const data = await fetchData();
+    renderKPIs(data.meta);
+    renderTable(data.ddd_stats);
+    renderCharts(data.daily_evolution || []);
+
+    const upd=data.meta?.gerado_em ?? '—';
+    document.getElementById('last-update').textContent=`Base gerada em ${upd}`;
+
+    if(showToast) toast('✓ Dados atualizados!','ok');
+  } catch(err) {
+    console.error(err);
+    document.getElementById('error-box').style.display='block';
+    document.getElementById('error-msg').textContent=
+      err.message + ' · Verifique se o arquivo data.json foi gerado pelo GitHub Actions.';
+    if(showToast) toast('⚠ Erro ao atualizar','err');
+  } finally {
+    document.getElementById('loading').classList.add('hidden');
+    btn.classList.remove('spinning');
+  }
+}
+
+document.getElementById('refresh-btn').addEventListener('click',()=>load(true));
+
+// Auto-reload a cada 5 minutos
+setInterval(()=>load(false), 5*60*1000);
+
+// Carga inicial
+load(false);
+</script>
+</body>
+</html>

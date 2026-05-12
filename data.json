@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "target_version": "07.02.50",
+    "total_geral": 190,
+    "total_atualizado": 1,
+    "total_pendente": 189,
+    "pct_geral": 0.53,
+    "gerado_em": "11/05/2026 00:00 UTC"
+  },
+  "ddd_stats": [
+    {"ddd":"62","total":52,"atualizado":0,"desatualizado":52,"pct":0.0,"diretoria":"Dir CO"},
+    {"ddd":"64","total":1,"atualizado":0,"desatualizado":1,"pct":0.0,"diretoria":"Dir CO"},
+    {"ddd":"65","total":22,"atualizado":1,"desatualizado":21,"pct":4.55,"diretoria":"Dir CO"},
+    {"ddd":"66","total":8,"atualizado":0,"desatualizado":8,"pct":0.0,"diretoria":"Dir CO"},
+    {"ddd":"69","total":5,"atualizado":0,"desatualizado":5,"pct":0.0,"diretoria":"Dir CO"},
+    {"ddd":"33","total":18,"atualizado":0,"desatualizado":18,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"35","total":20,"atualizado":0,"desatualizado":20,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"38","total":1,"atualizado":0,"desatualizado":1,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"74","total":10,"atualizado":0,"desatualizado":10,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"75","total":18,"atualizado":0,"desatualizado":18,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"77","total":6,"atualizado":0,"desatualizado":6,"pct":0.0,"diretoria":"Dir MG/BA"},
+    {"ddd":"91","total":12,"atualizado":0,"desatualizado":12,"pct":0.0,"diretoria":"Dir NORTE"},
+    {"ddd":"94","total":14,"atualizado":0,"desatualizado":14,"pct":0.0,"diretoria":"Dir NORTE"},
+    {"ddd":"97","total":3,"atualizado":0,"desatualizado":3,"pct":0.0,"diretoria":"Dir NORTE"}
+  ],
+  "daily_evolution": [
+    {"date":"11/05/2026","count":1}
+  ]
+}
